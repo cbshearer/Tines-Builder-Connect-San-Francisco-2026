@@ -1,0 +1,462 @@
+{
+  "title": "ThreatIntelBlogExtraction",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "severity_score": {
+      "type": "integer",
+      "description": "A severity score from 1-100 covering the maximum potential risk described in the blog.",
+      "minimum": 1,
+      "maximum": 100
+    },
+    "title": {
+      "type": "string",
+      "description": "A one sentence headline of the blog post."
+    },
+    "keywords": {
+      "type": "array",
+      "description": "A list of 1 to 10 keywords that reflect the main topic, subject, or focus of the article. Never include CVE IDs or IoCs. Threat actor names may be included only if they are a main topic, subject, or focus.",
+      "minItems": 1,
+      "maxItems": 10,
+      "uniqueItems": true,
+      "items": {
+        "type": "string"
+      }
+    },
+    "summary": {
+      "type": "string",
+      "description": "A 250 word maximum summary of the blog post in executive-friendly language."
+    },
+    "recommendation": {
+      "type": "string",
+      "description": "A one sentence recommendation based on the severity and the threat activity described in the article."
+    },
+    "actors": {
+      "type": "array",
+      "description": "Threat actor groups or named adversaries mentioned in the article. Include primary actors and actors mentioned only for context, but distinguish them using article_role. Return an empty array when no named or attributable actor is identified. Do not create an actor from a malware family, campaign name, tool name, or geographic-language clue.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "The standardized threat actor group or named adversary name."
+          },
+          "aliases": {
+            "type": "array",
+            "description": "Other actor names or aliases mentioned in the article referring to the same threat actor. Return an empty array if none are mentioned.",
+            "uniqueItems": true,
+            "items": {
+              "type": "string"
+            }
+          },
+          "article_role": {
+            "type": "string",
+            "description": "How this actor is used in the article. Use reference_only when the actor is mentioned for comparison, attribution history, or background and is not the main actor in the described activity.",
+            "enum": [
+              "primary_actor",
+              "secondary_actor",
+              "reference_only",
+              "unknown"
+            ]
+          },
+          "confidence": {
+            "type": "integer",
+            "description": "Confidence from 1-100 that this actor extraction and role are correct.",
+            "minimum": 1,
+            "maximum": 100
+          },
+          "mitre": {
+            "type": "object",
+            "description": "MITRE ATT&CK tactics and techniques identified from the article with a relationship to this threat actor. Include only mappings explicitly mentioned or strongly supported by described behavior.",
+            "additionalProperties": false,
+            "properties": {
+              "tactics": {
+                "type": "array",
+                "description": "MITRE ATT&CK tactics identified in the article with a relationship to this threat actor. Return an empty array if none are supported.",
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "entity_id": {
+                      "type": "string",
+                      "description": "A unique identifier for this tactic within the current actor record, such as ta-1. Technique tactic_entity_ids use this value."
+                    },
+                    "id": {
+                      "type": "string",
+                      "description": "The MITRE ATT&CK tactic ID, such as TA0001.",
+                      "pattern": "^TA[0-9]{4}$"
+                    },
+                    "name": {
+                      "type": "string",
+                      "description": "The official MITRE ATT&CK tactic name, such as Initial Access."
+                    },
+                    "article_role": {
+                      "type": "string",
+                      "description": "How central this tactic is to the threat actor activity described in the article.",
+                      "enum": [
+                        "primary_tactic",
+                        "supporting_tactic",
+                        "reference_only",
+                        "unknown"
+                      ]
+                    },
+                    "confidence": {
+                      "type": "integer",
+                      "description": "Confidence from 1-100 that this MITRE tactic mapping is correct.",
+                      "minimum": 1,
+                      "maximum": 100
+                    }
+                  },
+                  "required": [
+                    "entity_id",
+                    "id",
+                    "name",
+                    "article_role",
+                    "confidence"
+                  ]
+                }
+              },
+              "techniques": {
+                "type": "array",
+                "description": "MITRE ATT&CK techniques or sub-techniques identified in the article with a relationship to this threat actor. Return an empty array if none are supported.",
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "entity_id": {
+                      "type": "string",
+                      "description": "A unique identifier for this technique within the current actor record, such as t-1."
+                    },
+                    "id": {
+                      "type": "string",
+                      "description": "The MITRE ATT&CK technique or sub-technique ID, such as T1566 or T1566.001.",
+                      "pattern": "^T[0-9]{4}(\\.[0-9]{3})?$"
+                    },
+                    "name": {
+                      "type": "string",
+                      "description": "The official MITRE ATT&CK technique or sub-technique name."
+                    },
+                    "tactic_entity_ids": {
+                      "type": "array",
+                      "description": "The entity_id values of tactics in this actor record that apply to this technique.",
+                      "uniqueItems": true,
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "article_role": {
+                      "type": "string",
+                      "description": "How central this technique is to the threat actor activity described in the article.",
+                      "enum": [
+                        "primary_technique",
+                        "supporting_technique",
+                        "reference_only",
+                        "unknown"
+                      ]
+                    },
+                    "confidence": {
+                      "type": "integer",
+                      "description": "Confidence from 1-100 that this MITRE technique mapping is correct.",
+                      "minimum": 1,
+                      "maximum": 100
+                    }
+                  },
+                  "required": [
+                    "entity_id",
+                    "id",
+                    "name",
+                    "tactic_entity_ids",
+                    "article_role",
+                    "confidence"
+                  ]
+                }
+              }
+            },
+            "required": [
+              "tactics",
+              "techniques"
+            ]
+          },
+          "cve": {
+            "type": "array",
+            "description": "CVE IDs the actor is explicitly confirmed or credibly alleged to have used in the article. Return an empty array if none are identified.",
+            "uniqueItems": true,
+            "items": {
+              "type": "string",
+              "pattern": "^CVE-[0-9]{4}-[0-9]{4,}$"
+            }
+          }
+        },
+        "required": [
+          "name",
+          "aliases",
+          "article_role",
+          "confidence",
+          "mitre",
+          "cve"
+        ]
+      }
+    },
+    "cves": {
+      "type": "array",
+      "description": "CVEs explicitly identified in the article. If no CVEs are found, return an empty array. Do not assume a CVE is exploited by an actor unless the article supports that relationship.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "The CVE ID, for example CVE-2026-12345.",
+            "pattern": "^CVE-[0-9]{4}-[0-9]{4,}$"
+          },
+          "vendor": {
+            "type": "string",
+            "description": "The vendor the CVE applies to, if identified in the article. Return an empty string if not identified."
+          },
+          "product": {
+            "type": "string",
+            "description": "The affected product, software, platform, or service, if identified in the article. Return an empty string if not identified."
+          },
+          "cvss_score": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "description": "The CVSS base score explicitly stated in the article. Return null when no CVSS score is stated. Do not infer or retrieve a score from outside the supplied article.",
+            "minimum": 0,
+            "maximum": 10
+          },
+          "exploitation_status": {
+            "type": "string",
+            "description": "How the article describes exploitation of this CVE. Use mentioned_for_reference when the CVE is background or context and is not part of the main activity.",
+            "enum": [
+              "exploited_in_described_activity",
+              "exploited_in_the_wild_generally",
+              "mentioned_for_reference",
+              "not_stated",
+              "unknown"
+            ]
+          },
+          "article_role": {
+            "type": "string",
+            "description": "The CVE's role in the article.",
+            "enum": [
+              "primary_vulnerability",
+              "supporting_vulnerability",
+              "reference_only",
+              "comparison",
+              "unknown"
+            ]
+          },
+          "confidence": {
+            "type": "integer",
+            "description": "Confidence from 1-100 that this CVE extraction and role are correct.",
+            "minimum": 1,
+            "maximum": 100
+          },
+          "actors": {
+            "type": "array",
+            "description": "Actors explicitly confirmed or credibly alleged in the article to have leveraged this CVE. Return an empty array if none are identified.",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "actor": {
+                  "type": "string",
+                  "description": "The standardized name of the actor alleged to leverage this CVE."
+                },
+                "confidence": {
+                  "type": "integer",
+                  "description": "Confidence from 1-100 that the actor-to-CVE relationship is correct.",
+                  "minimum": 1,
+                  "maximum": 100
+                },
+                "evidence": {
+                  "type": "string",
+                  "description": "A short explanation of the article evidence supporting the actor-to-CVE relationship."
+                }
+              },
+              "required": [
+                "actor",
+                "confidence",
+                "evidence"
+              ]
+            }
+          }
+        },
+        "required": [
+          "id",
+          "vendor",
+          "product",
+          "cvss_score",
+          "exploitation_status",
+          "article_role",
+          "confidence",
+          "actors"
+        ]
+      }
+    },
+    "iocs": {
+      "type": "array",
+      "description": "Indicators of compromise explicitly found in the article. If no IoCs are found, return an empty array. Do not include a legitimate root domain merely because attackers abused a feature hosted on that domain unless the exact domain or URL is itself operationally useful as an indicator. Do not include partial IoCs or hashes, only include the IoC types that we track: ipv4, ipv6, domain, url, email, filename or filehash",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "type": {
+            "type": "string",
+            "description": "The type of IoC. ",
+            "enum": [
+              "ipv4",
+              "ipv6",
+              "domain",
+              "url",
+              "email",
+              "filehash",
+              "filename"
+            ]
+          },
+          "raw_value": {
+            "type": "string",
+            "description": "The IoC exactly as it appears in the article, including any defanging such as hxxp or [.] notation. Use the same value as value if it was not defanged."
+          },
+          "value": {
+            "type": "string",
+            "description": "The normalized IoC value. Remove common defanging such as hxxp to http and [.] to . when safe to do so."
+          },
+          "is_defanged": {
+            "type": "boolean",
+            "description": "Whether the article presented the IoC in a defanged form."
+          },
+          "hash_type": {
+            "type": "string",
+            "description": "The hash algorithm if the IoC type is filehash; otherwise use not_applicable.",
+            "enum": [
+              "md5",
+              "sha1",
+              "sha256",
+              "sha512",
+              "unknown",
+              "not_applicable"
+            ]
+          },
+          "indicator_role": {
+            "type": "string",
+            "description": "The role this IoC appears to play in the article.",
+            "enum": [
+              "attacker_infrastructure",
+              "command_and_control",
+              "phishing_sender",
+              "payload_or_malware",
+              "victim_or_benign_context",
+              "reference_only",
+              "unknown"
+            ]
+          },
+          "article_role": {
+            "type": "string",
+            "description": "How central this IoC is to the main described activity.",
+            "enum": [
+              "primary_indicator",
+              "supporting_indicator",
+              "reference_only",
+              "unknown"
+            ]
+          },
+          "severity": {
+            "type": "integer",
+            "description": "The severity of this IoC from 1-100 if observed in the organization's environment without additional context. Common legitimate resources abused for malicious purposes should score lower than attacker-controlled infrastructure or a malware file hash.",
+            "minimum": 1,
+            "maximum": 100
+          },
+          "role_confidence": {
+            "type": "integer",
+            "description": "Confidence from 1-100 that this IoC extraction and role are correct.",
+            "minimum": 1,
+            "maximum": 100
+          },
+          "actor": {
+            "type": "string",
+            "description": "The standardized actor name confirmed to be using this IoC. Use None when no actor is identified. Do not use a malware family as the actor."
+          },
+          "evidence": {
+            "type": "string",
+            "description": "A short explanation of why the actor-to-IoC relationship was extracted. Use none when there is no relationship and unknown when the relationship is unclear."
+          }
+        },
+        "required": [
+          "type",
+          "raw_value",
+          "value",
+          "is_defanged",
+          "hash_type",
+          "indicator_role",
+          "article_role",
+          "severity",
+          "role_confidence",
+          "actor",
+          "evidence"
+        ]
+      }
+    },
+    "breach_gate": {
+      "type": "object",
+      "description": "A lightweight routing decision that determines whether the article should be sent to the detailed breach analysis agent.",
+      "additionalProperties": false,
+      "properties": {
+        "breach_qualification": {
+          "type": "string",
+          "description": "Whether the article meets the victim-specific breach definition. Use qualifies only when a named organization, project, package, account, repository, pipeline, or other clearly identified victim experienced or is credibly alleged to have experienced an actual compromise. Use does_not_qualify for general malware campaigns, phishing, malvertising, platform abuse, vulnerabilities without an identified victim, security research, or activity involving only unnamed victims. Use uncertain when the available evidence is ambiguous or incomplete.",
+          "enum": [
+            "qualifies",
+            "does_not_qualify",
+            "uncertain"
+          ]
+        },
+        "confidence": {
+          "type": "integer",
+          "description": "Confidence from 1-100 that the breach qualification is correct.",
+          "minimum": 1,
+          "maximum": 100
+        },
+        "qualification_reason": {
+          "type": "string",
+          "description": "One short sentence explaining the decisive evidence for or against breach qualification."
+        },
+        "primary_subject_type": {
+          "type": "string",
+          "description": "The primary type of threat-intelligence content described by the article.",
+          "enum": [
+            "breach_incident",
+            "software_supply_chain_incident",
+            "malware_campaign",
+            "phishing_or_malvertising_campaign",
+            "vulnerability_disclosure",
+            "threat_actor_report",
+            "security_research",
+            "other",
+            "unknown"
+          ]
+        }
+      },
+      "required": [
+        "breach_qualification",
+        "confidence",
+        "qualification_reason",
+        "primary_subject_type"
+      ]
+    }
+  },
+  "required": [
+    "severity_score",
+    "title",
+    "keywords",
+    "summary",
+    "recommendation",
+    "actors",
+    "cves",
+    "iocs",
+    "breach_gate"
+  ]
+}
